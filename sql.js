@@ -35,7 +35,7 @@ function query() {
     /**
      * This function checks if this is duplicated select invoke, then throw Error.
      * Set fn to variable for further application
-     * @param {function} fn -
+     * @param {function} fn - function for further application in execute()
      * @returns this
      */
     select(fn) {
