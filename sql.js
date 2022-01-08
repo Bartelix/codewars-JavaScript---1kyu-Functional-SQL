@@ -6,7 +6,8 @@ function query() {
   let result = [];
 
   function crossJoin(tables) {
-    const result = tables.reduce((prev, curr) => {
+    if (tables.length === 1) return tables[0];
+    return tables.reduce((prev, curr) => {
       const res = [];
       if (prev.length === 0) {
         for (let j = 0; j < curr.length; j++) {
@@ -22,7 +23,6 @@ function query() {
         return res;
       }
     }, []);
-    return result;
   }
 
   return {
@@ -34,10 +34,7 @@ function query() {
     },
     from(...tables) {
       if (fromDone) throw new Error('Duplicate FROM');
-      if (tables.length > 1) {
-        result = crossJoin(tables);
-        isMultipleCollections = true;
-      } else result = tables[0];
+      result = crossJoin(tables);
       fromDone = true;
       return this;
     },
