@@ -1,5 +1,5 @@
 function query() {
-  let selectFn;
+  let selectFn = null;
   let fromDone = false;
   let selectDone = false;
   let result = [];
@@ -25,9 +25,9 @@ function query() {
   }
 
   return {
-    select(fieldFn) {
+    select(fn) {
       if (selectDone) throw new Error('Duplicate SELECT');
-      selectFn = fieldFn;
+      selectFn = fn;
       selectDone = true;
       return this;
     },
@@ -37,12 +37,12 @@ function query() {
       fromDone = true;
       return this;
     },
-    where(...filterFns) {
-      result = result.filter(elem => filterFns.map(fn => fn(elem)).some(el => el));
+    where(...fns) {
+      result = result.filter(record => fns.map(fn => fn(record)).some(el => el));
       return this;
     },
-    orderBy(sortFn) {
-      result.sort(sortFn);
+    orderBy(fn) {
+      result.sort(fn);
       return this;
     },
     groupBy() {
@@ -53,7 +53,7 @@ function query() {
     },
     execute() {
       if (selectFn) {
-        return result.map(el => selectFn(el));
+        return result.map(record => selectFn(record));
       }
       return result;
     }
