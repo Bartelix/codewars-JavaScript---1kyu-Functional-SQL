@@ -2,7 +2,6 @@ function query() {
   let selectFn;
   let fromDone = false;
   let selectDone = false;
-  let isMultipleCollections = false;
   let result = [];
 
   function crossJoin(tables) {
