@@ -17,22 +17,18 @@ function query() {
    */
   function crossJoin(tables) {
     if (tables.length === 1) return tables[0];
-    return tables.reduce((prev, curr) => {
-      const res = [];
-      if (prev.length === 0) {
-        for (let j = 0; j < curr.length; j++) {
-          res.push([curr[j]]);
-        }
-        return res;
-      } else {
+    return tables.reduce(
+      (prev, curr) => {
+        const res = [];
         for (let i = 0; i < prev.length; i++) {
           for (let j = 0; j < curr.length; j++) {
             res.push([...prev[i], curr[j]]);
           }
         }
         return res;
-      }
-    }, []);
+      },
+      [[]]
+    );
   }
 
   return {
