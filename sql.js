@@ -2,6 +2,8 @@ function query() {
   let selectFn = null;
   let fromDone = false;
   let selectDone = false;
+  let groupByDone = false;
+  let orderByDone = false;
   let result = [];
 
   /**
@@ -72,7 +74,9 @@ function query() {
      * @returns this
      */
     orderBy(fn) {
+      if (orderByDone) throw new Error('Duplicate ORDERBY');
       result.sort(fn);
+      orderByDone = true;
       return this;
     },
     /**
@@ -80,6 +84,8 @@ function query() {
      * @returns this
      */
     groupBy() {
+      if (groupByDone) throw new Error('Duplicate GROUPBY');
+      groupByDone = true;
       return this;
     },
     /**
