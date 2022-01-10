@@ -56,21 +56,8 @@ describe('You can omit any SQL clause', () => {
   });
 });
 
-test('You can make queries over object collections.', () => {
-  const persons = [
-    { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-    { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-    { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-    { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-    { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-    { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-    { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-  ];
-  expect(query().select().from(persons).execute()).toEqual(persons);
-});
-
-test('You can select some fields.', () => {
-  const persons = [
+describe('Basic SELECT and WHERE over objects', () => {
+  const persons = () => [
     { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
     { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
     { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
@@ -82,94 +69,101 @@ test('You can select some fields.', () => {
   function profession(person) {
     return person.profession;
   }
-  expect(query().select(profession).from(persons).execute()).toEqual([
-    'teacher',
-    'teacher',
-    'teacher',
-    'scientific',
-    'scientific',
-    'scientific',
-    'politician'
-  ]);
-});
+  function isTeacher(person) {
+    return person.profession === 'teacher';
+  }
+  function name(person) {
+    return person.name;
+  }
 
-describe('You can apply filters', () => {
+  test('You can make queries over object collections.', () => {
+    expect(query().select().from(persons()).execute()).toEqual(persons());
+  });
+
+  test('You can select some fields.', () => {
+    expect(query().select(profession).from(persons()).execute()).toEqual([
+      'teacher',
+      'teacher',
+      'teacher',
+      'scientific',
+      'scientific',
+      'scientific',
+      'politician'
+    ]);
+  });
+
+  test('No FROM clause produces empty array', () => {
+    expect(query().select(profession).execute()).toEqual([]);
+  });
+
   test('SELECT profession FROM persons WHERE profession="teacher"', () => {
-    const persons = [
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-      { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-      { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-    ];
-    function profession(person) {
-      return person.profession;
-    }
-    function isTeacher(person) {
-      return person.profession === 'teacher';
-    }
-    expect(query().select(profession).from(persons).where(isTeacher).execute()).toEqual([
+    expect(query().select(profession).from(persons()).where(isTeacher).execute()).toEqual([
       'teacher',
       'teacher',
       'teacher'
     ]);
   });
+
   test('SELECT * FROM persons WHERE profession="teacher"', () => {
-    const persons = [
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-      { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-      { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-    ];
-    function isTeacher(person) {
-      return person.profession === 'teacher';
-    }
-    expect(query().select().from(persons).where(isTeacher).execute()).toEqual([
+    expect(query().select().from(persons()).where(isTeacher).execute()).toEqual([
       { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
       { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
       { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' }
     ]);
   });
+
   test('SELECT name FROM persons WHERE profession="teacher"', () => {
-    const persons = [
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-      { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-      { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-    ];
-    function name(person) {
-      return person.name;
-    }
-    function isTeacher(person) {
-      return person.profession === 'teacher';
-    }
-    expect(query().select(name).from(persons).where(isTeacher).execute()).toEqual(['Peter', 'Michael', 'Peter']);
+    expect(query().select(name).from(persons()).where(isTeacher).execute()).toEqual(['Peter', 'Michael', 'Peter']);
+  });
+
+  test('SELECT name FROM persons WHERE profession="teacher" - where before from', () => {
+    expect(query().where(isTeacher).from(persons()).select(name).execute()).toEqual(['Peter', 'Michael', 'Peter']);
   });
 });
 
-describe('A groupations are possible', () => {
-  test('SELECT * FROM persons GROUP BY profession', () => {
-    const persons = [
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-      { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-      { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-    ];
-    function profession(person) {
-      return person.profession;
+describe('GROUP BY tests', () => {
+  const persons = () => [
+    { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
+    { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
+    { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
+    { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
+    { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
+    { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
+    { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
+  ];
+  function profession(person) {
+    return person.profession;
+  }
+  function isTeacher(person) {
+    return person.profession === 'teacher';
+  }
+  function professionGroup(group) {
+    return group[0];
+  }
+  function name(person) {
+    return person.name;
+  }
+  function age(person) {
+    return person.age;
+  }
+  function maritalStatus(person) {
+    return person.maritalStatus;
+  }
+  function professionCount(group) {
+    return [group[0], group[1].length];
+  }
+  function naturalCompare(value1, value2) {
+    if (value1 < value2) {
+      return -1;
+    } else if (value1 > value2) {
+      return 1;
+    } else {
+      return 0;
     }
-    expect(query().select().from(persons).groupBy(profession).execute()).toEqual([
+  }
+
+  test('SELECT * FROM persons GROUP BY profession', () => {
+    expect(query().select().from(persons()).groupBy(profession).execute()).toEqual([
       [
         'teacher',
         [
@@ -191,23 +185,8 @@ describe('A groupations are possible', () => {
   });
 
   test('You can mix where with groupBy', () => {
-    const persons = [
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-      { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-      { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-    ];
-    function profession(person) {
-      return person.profession;
-    }
-    function isTeacher(person) {
-      return person.profession === 'teacher';
-    }
     // SELECT * FROM persons WHERE profession='teacher' GROUP BY profession
-    expect(query().select().from(persons).where(isTeacher).groupBy(profession).execute()).toEqual([
+    expect(query().select().from(persons()).where(isTeacher).groupBy(profession).execute()).toEqual([
       [
         'teacher',
         [
@@ -220,64 +199,172 @@ describe('A groupations are possible', () => {
   });
 
   test('You can mix select with groupBy', () => {
-    const persons = [
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-      { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-      { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-      { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-    ];
-    function profession(person) {
-      return person.profession;
-    }
-    function professionGroup(group) {
-      return group[0];
-    }
     // SELECT profession FROM persons GROUP BY profession
-    expect(query().select(professionGroup).from(persons).groupBy(profession).execute()).toEqual([
+    expect(query().select(professionGroup).from(persons()).groupBy(profession).execute()).toEqual([
       'teacher',
       'scientific',
       'politician'
     ]);
   });
 
+  test('Double grouping personse', () => {
+    expect(query().select().from(persons()).groupBy(profession, name).execute()).toEqual([
+      [
+        'teacher',
+        [
+          [
+            'Peter',
+            [
+              { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
+              { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' }
+            ]
+          ],
+          ['Michael', [{ name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' }]]
+        ]
+      ],
+      [
+        'scientific',
+        [
+          [
+            'Anna',
+            [
+              { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
+              { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' }
+            ]
+          ],
+          ['Rose', [{ name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' }]]
+        ]
+      ],
+      ['politician', [['Anna', [{ name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }]]]]
+    ]);
+  });
+
+  test('Many grouping fields', () => {
+    expect(query().select().from(persons()).groupBy(profession, name, age, maritalStatus).execute()).toEqual([
+      [
+        'teacher',
+        [
+          [
+            'Peter',
+            [
+              [
+                20,
+                [
+                  [
+                    'married',
+                    [
+                      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
+                      { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' }
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            'Michael',
+            [[50, [['single', [{ name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' }]]]]]
+          ]
+        ]
+      ],
+      [
+        'scientific',
+        [
+          [
+            'Anna',
+            [
+              [
+                20,
+                [
+                  ['married', [{ name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' }]],
+                  ['single', [{ name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' }]]
+                ]
+              ]
+            ]
+          ],
+          [
+            'Rose',
+            [[50, [['married', [{ name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' }]]]]]
+          ]
+        ]
+      ],
+      [
+        'politician',
+        [
+          [
+            'Anna',
+            [[50, [['married', [{ name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }]]]]]
+          ]
+        ]
+      ]
+    ]);
+  });
+
+  test('SELECT profession, count(profession) FROM persons GROUPBY profession', () => {
+    expect(query().select(professionCount).from(persons()).groupBy(profession).execute()).toEqual([
+      ['teacher', 3],
+      ['scientific', 3],
+      ['politician', 1]
+    ]);
+  });
+
+  test('SELECT profession, count(profession) FROM persons GROUPBY profession ORDER BY profession', () => {
+    expect(
+      query().select(professionCount).from(persons()).groupBy(profession).orderBy(naturalCompare).execute()
+    ).toEqual([
+      ['politician', 1],
+      ['scientific', 3],
+      ['teacher', 3]
+    ]);
+  });
+});
+
+describe('Numbers array tests', () => {
+  const numbers = () => [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  function isEven(number) {
+    return number % 2 === 0;
+  }
+  function parity(number) {
+    return isEven(number) ? 'even' : 'odd';
+  }
+  function isPrime(number) {
+    if (number < 2) {
+      return false;
+    }
+    for (let i = 2; i < Math.sqrt(number); i++) {
+      if (number % i === 0) return true;
+    }
+    return false;
+  }
+  function prime(number) {
+    return isPrime(number) ? 'prime' : 'divisible';
+  }
+  function odd(group) {
+    return group[0] === 'odd';
+  }
+  function descendentCompare(number1, number2) {
+    return number2 - number1;
+  }
+  function lessThan3(number) {
+    return number < 3;
+  }
+  function greaterThan4(number) {
+    return number > 4;
+  }
+
+  test('SELECT * FROM numbers', () => {
+    expect(query().select().from(numbers()).execute()).toEqual(numbers());
+  });
+
   test('Grouping numbers by parity', () => {
-    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    function isEven(number) {
-      return number % 2 === 0;
-    }
-    function parity(number) {
-      return isEven(number) ? 'even' : 'odd';
-    }
-    expect(query().select().from(numbers).groupBy(parity).execute()).toEqual([
+    expect(query().select().from(numbers()).groupBy(parity).execute()).toEqual([
       ['odd', [1, 3, 5, 7, 9]],
       ['even', [2, 4, 6, 8]]
     ]);
   });
 
-  test('Multilevel grouping', () => {
-    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    function isEven(number) {
-      return number % 2 === 0;
-    }
-    function parity(number) {
-      return isEven(number) ? 'even' : 'odd';
-    }
-    function isPrime(number) {
-      if (number < 2) {
-        return false;
-      }
-      for (let i = 2; i < Math.sqrt(number); i++) {
-        if (number % i === 0) return true;
-      }
-      return false;
-    }
-    function prime(number) {
-      return isPrime(number) ? 'prime' : 'divisible';
-    }
-    expect(query().select().from(numbers).groupBy(parity, prime).execute()).toEqual([
+  test('Multilevel grouping - SELECT * FROM numbers GROUP BY parity, isPrime', () => {
+    expect(query().select().from(numbers()).groupBy(parity, prime).execute()).toEqual([
       [
         'odd',
         [
@@ -296,29 +383,21 @@ describe('A groupations are possible', () => {
   });
 
   test('Filter groups with having', () => {
-    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    function odd(group) {
-      return group[0] === 'odd';
-    }
-    function isEven(number) {
-      return number % 2 === 0;
-    }
-    function parity(number) {
-      return isEven(number) ? 'even' : 'odd';
-    }
-    expect(query().select().from(numbers).groupBy(parity).having(odd).execute()).toEqual([['odd', [1, 3, 5, 7, 9]]]);
+    expect(query().select().from(numbers()).groupBy(parity).having(odd).execute()).toEqual([['odd', [1, 3, 5, 7, 9]]]);
+  });
+
+  test('SELECT * FROM number WHERE number < 3 OR number > 4', () => {
+    expect(query().select().from(numbers()).where(lessThan3, greaterThan4).execute()).toEqual([1, 2, 5, 6, 7, 8, 9]);
+  });
+  // jak sortowanie jest wcześniej to późniejsze testy nie przechodzą, bo jakby zapamiętuje jak zostało posortowane :/
+  test('Descending order numbers', () => {
+    expect(query().select().from(numbers()).orderBy(descendentCompare).execute()).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
   });
 });
 
-describe('You can order the results', () => {
-  test('Descending order numbers', () => {
-    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    function descendentCompare(number1, number2) {
-      return number2 - number1;
-    }
-    expect(query().select().from(numbers).orderBy(descendentCompare).execute()).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
-  });
-});
+describe('Frequency tests', () => {});
+
+describe('join tests', () => {});
 
 test('from() supports multiple collections', () => {
   const teachers = [
