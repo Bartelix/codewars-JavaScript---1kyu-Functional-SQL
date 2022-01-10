@@ -1,13 +1,59 @@
 const query = require('../sql');
 
+describe('If you repeat a SQL clause (except where() or having()), an exception will be thrown', () => {
+  test('duplicate select', () => {
+    expect(() => query().select().select().execute()).toThrow('Duplicate SELECT');
+  });
+
+  test('duplicate select with from among', () => {
+    expect(() => query().select().from([]).select().execute()).toThrow('Duplicate SELECT');
+  });
+
+  test('duplicate from', () => {
+    expect(() => query().select().from([]).from([]).execute()).toThrow('Duplicate FROM');
+  });
+
+  test('duplicate orderBy', () => {
+    function id(value) {
+      return value;
+    }
+    expect(() => query().select().from([]).orderBy(id).orderBy(id).execute()).toThrow('Duplicate ORDERBY');
+  });
+
+  test('duplicate groupBy', () => {
+    function id(value) {
+      return value;
+    }
+    expect(() => query().select().groupBy(id).from([]).groupBy(id).execute()).toThrow('Duplicate GROUPBY');
+  });
+
+  test('duplicate where is and filter', () => {
+    expect(() => query().select().from([]).where([]).where([])).not.toThrow(Error);
+  });
+});
 test('The methods are chainable and the query is executed by calling the execute() method, chaining select and from', () => {
   const numbers = [1, 2, 3];
-  expect(query().select().from(numbers).execute()).toEqual([1, 2, 3]);
+  expect(query().select().from(numbers).execute()).toEqual(numbers);
 });
 
 test('Clauses order does not matter, from before select', () => {
   const numbers = [1, 2, 3];
-  expect(query().from(numbers).select().execute()).toEqual([1, 2, 3]);
+  expect(query().from(numbers).select().execute()).toEqual(numbers);
+});
+
+describe('You can omit any SQL clause', () => {
+  test('No FROM clause produces empty array', () => {
+    expect(query().select().execute()).toEqual([]);
+  });
+
+  test('SELECT can be omited', () => {
+    const numbers = [1, 2, 3];
+    expect(query().from(numbers).execute()).toEqual([1, 2, 3]);
+  });
+
+  test('No FROM and omited SELECT should return empty array', () => {
+    expect(query().execute()).toEqual([]);
+  });
 });
 
 test('You can make queries over object collections.', () => {
@@ -20,15 +66,7 @@ test('You can make queries over object collections.', () => {
     { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
     { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
   ];
-  expect(query().select().from(persons).execute()).toEqual([
-    { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-    { name: 'Michael', profession: 'teacher', age: 50, maritalStatus: 'single' },
-    { name: 'Peter', profession: 'teacher', age: 20, maritalStatus: 'married' },
-    { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'married' },
-    { name: 'Rose', profession: 'scientific', age: 50, maritalStatus: 'married' },
-    { name: 'Anna', profession: 'scientific', age: 20, maritalStatus: 'single' },
-    { name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }
-  ]);
+  expect(query().select().from(persons).execute()).toEqual(persons);
 });
 
 test('You can select some fields.', () => {
@@ -53,39 +91,6 @@ test('You can select some fields.', () => {
     'scientific',
     'politician'
   ]);
-});
-
-describe('You can omit any SQL clause', () => {
-  test('Omit from', () => {
-    expect(query().select().execute()).toEqual([]);
-  });
-
-  test('Omit select', () => {
-    const numbers = [1, 2, 3];
-    expect(query().from(numbers).execute()).toEqual([1, 2, 3]);
-  });
-
-  test('Omit from and select', () => {
-    expect(query().execute()).toEqual([]);
-  });
-});
-
-describe('If you repeat a SQL clause (except where() or having()), an exception will be thrown', () => {
-  test('duplicate select', () => {
-    expect(() => query().select().select().execute()).toThrow('Duplicate SELECT');
-  });
-
-  test('duplicate select with from among', () => {
-    expect(() => query().select().from([]).select().execute()).toThrow('Duplicate SELECT');
-  });
-
-  test('duplicate from', () => {
-    expect(() => query().select().from([]).from([]).execute()).toThrow('Duplicate FROM');
-  });
-
-  test('duplicate where is and filter', () => {
-    expect(() => query().select().from([]).where([]).where([])).not.toThrow(Error);
-  });
 });
 
 describe('You can apply filters', () => {
