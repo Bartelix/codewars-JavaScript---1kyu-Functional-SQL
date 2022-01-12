@@ -143,7 +143,12 @@ function query() {
       }
       if (groupByFns.length > 0) {
         for (let i = 0; i < groupByFns.length; i++) {
-          result = _groupBy(result, groupByFns[i]);
+          if (i === 0) result = _groupBy(result, groupByFns[i], i);
+          else {
+            for (let j = 0; j < result.length; j++) {
+              result[j].push(_groupBy(result[j].pop(), groupByFns[i]));
+            }
+          }
         }
       }
       if (havingFns.length > 0) {
