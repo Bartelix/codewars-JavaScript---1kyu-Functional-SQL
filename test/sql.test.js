@@ -207,7 +207,7 @@ describe('GROUP BY tests', () => {
     ]);
   });
 
-  test('Double grouping personse', () => {
+  test('Double grouping persons', () => {
     expect(query().select().from(persons()).groupBy(profession, name).execute()).toEqual([
       [
         'teacher',

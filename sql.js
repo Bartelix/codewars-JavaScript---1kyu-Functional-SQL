@@ -2,7 +2,7 @@ function query() {
   let selectFn = null;
   const whereFns = [];
   let orderByFn = null;
-  let groupByFn = null;
+  let groupByFns = [];
   const havingFns = [];
   let fromDone = false;
   let selectDone = false;
@@ -41,13 +41,29 @@ function query() {
     return rows.filter(row => whereFns.map(whereFn => whereFn(row)).some(res => res === true));
   }
 
+  function _groupBy(rows, groupByFn) {
+    const groups = rows.reduce((groups, row) => {
+      let group = groupByFn(row);
+      if (groups.hasOwnProperty(group)) {
+        groups[group].push(row);
+      } else {
+        groups[group] = [row];
+      }
+      return groups;
+    }, {});
+
+    const result = [];
+    for (const [key, value] of Object.entries(groups)) {
+      result.push([key, value]);
+    }
+    return result;
+  }
+
+  function _having(rows, havingFn) {}
+
   function _orderBy(rows, orderByFn) {
     return rows.slice().sort(orderByFn);
   }
-
-  function _groupBy(rows, groupByFn) {}
-
-  function _having(rows, havingFn) {}
 
   function _select(rows, selectFn) {
     return rows.map(row => selectFn(row));
@@ -104,9 +120,9 @@ function query() {
      *
      * @returns this
      */
-    groupBy(fn) {
+    groupBy(...fns) {
       if (groupByDone) throw new Error('Duplicate GROUPBY');
-      groupByFn = fn;
+      groupByFns = fns;
       groupByDone = true;
       return this;
     },
@@ -130,6 +146,11 @@ function query() {
         }
       }
       // group by
+      if (groupByFns.length > 0) {
+        for (let i = 0; i < groupByFns.length; i++) {
+          result = _groupBy(result, groupByFns[i]);
+        }
+      }
       // having
       if (orderByFn != null) {
         result = _orderBy(result, orderByFn);
