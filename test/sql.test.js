@@ -134,33 +134,6 @@ describe('GROUP BY tests', () => {
   function profession(person) {
     return person.profession;
   }
-  function isTeacher(person) {
-    return person.profession === 'teacher';
-  }
-  function professionGroup(group) {
-    return group[0];
-  }
-  function name(person) {
-    return person.name;
-  }
-  function age(person) {
-    return person.age;
-  }
-  function maritalStatus(person) {
-    return person.maritalStatus;
-  }
-  function professionCount(group) {
-    return [group[0], group[1].length];
-  }
-  function naturalCompare(value1, value2) {
-    if (value1 < value2) {
-      return -1;
-    } else if (value1 > value2) {
-      return 1;
-    } else {
-      return 0;
-    }
-  }
 
   test('SELECT * FROM persons GROUP BY profession', () => {
     expect(query().select().from(persons()).groupBy(profession).execute()).toEqual([
@@ -184,6 +157,10 @@ describe('GROUP BY tests', () => {
     ]);
   });
 
+  function isTeacher(person) {
+    return person.profession === 'teacher';
+  }
+
   test('You can mix where with groupBy', () => {
     // SELECT * FROM persons WHERE profession='teacher' GROUP BY profession
     expect(query().select().from(persons()).where(isTeacher).groupBy(profession).execute()).toEqual([
@@ -198,6 +175,10 @@ describe('GROUP BY tests', () => {
     ]);
   });
 
+  function professionGroup(group) {
+    return group[0];
+  }
+
   test('You can mix select with groupBy', () => {
     // SELECT profession FROM persons GROUP BY profession
     expect(query().select(professionGroup).from(persons()).groupBy(profession).execute()).toEqual([
@@ -207,6 +188,9 @@ describe('GROUP BY tests', () => {
     ]);
   });
 
+  function name(person) {
+    return person.name;
+  }
   test('Double grouping persons', () => {
     expect(query().select().from(persons()).groupBy(profession, name).execute()).toEqual([
       [
@@ -238,6 +222,13 @@ describe('GROUP BY tests', () => {
       ['politician', [['Anna', [{ name: 'Anna', profession: 'politician', age: 50, maritalStatus: 'married' }]]]]
     ]);
   });
+
+  function age(person) {
+    return person.age;
+  }
+  function maritalStatus(person) {
+    return person.maritalStatus;
+  }
 
   test('Many grouping fields', () => {
     expect(query().select().from(persons()).groupBy(profession, name, age, maritalStatus).execute()).toEqual([
@@ -300,6 +291,10 @@ describe('GROUP BY tests', () => {
     ]);
   });
 
+  function professionCount(group) {
+    return [group[0], group[1].length];
+  }
+
   test('SELECT profession, count(profession) FROM persons GROUPBY profession', () => {
     expect(query().select(professionCount).from(persons()).groupBy(profession).execute()).toEqual([
       ['teacher', 3],
@@ -307,6 +302,16 @@ describe('GROUP BY tests', () => {
       ['politician', 1]
     ]);
   });
+
+  function naturalCompare(value1, value2) {
+    if (value1 < value2) {
+      return -1;
+    } else if (value1 > value2) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
 
   test('SELECT profession, count(profession) FROM persons GROUPBY profession ORDER BY profession', () => {
     expect(
@@ -344,10 +349,10 @@ describe('Numbers array tests', () => {
     if (number < 2) {
       return false;
     }
-    for (let i = 2; i < Math.sqrt(number); i++) {
-      if (number % i === 0) return true;
+    for (let i = 2; i <= Math.sqrt(number); i++) {
+      if (number % i === 0) return false;
     }
-    return false;
+    return true;
   }
   function prime(number) {
     return isPrime(number) ? 'prime' : 'divisible';
