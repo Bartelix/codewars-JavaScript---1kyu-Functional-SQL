@@ -1,5 +1,9 @@
 function query() {
   let selectFn = null;
+  const whereFns = [];
+  let orderByFn = null;
+  let groupByFn = null;
+  const havingFns = [];
   let fromDone = false;
   let selectDone = false;
   let groupByDone = false;
@@ -17,7 +21,7 @@ function query() {
    * @param {Array<Array>} tables
    * @returns array
    */
-  function crossJoin(tables) {
+  function _crossJoin(tables) {
     if (tables.length === 1) return tables[0];
     return tables.reduce(
       (prev, curr) => {
@@ -31,6 +35,22 @@ function query() {
       },
       [[]]
     );
+  }
+
+  function _where(rows, whereFns) {
+    return rows.filter(row => whereFns.map(whereFn => whereFn(row)).some(res => res === true));
+  }
+
+  function _orderBy(rows, orderByFn) {
+    return rows.slice().sort(orderByFn);
+  }
+
+  function _groupBy(rows, groupByFn) {}
+
+  function _having(rows, havingFn) {}
+
+  function _select(rows, selectFn) {
+    return rows.map(row => selectFn(row));
   }
 
   return {
@@ -53,29 +73,30 @@ function query() {
      */
     from(...tables) {
       if (fromDone) throw new Error('Duplicate FROM');
-      result = crossJoin(tables);
+      result = _crossJoin(tables);
       fromDone = true;
       return this;
     },
     /**
-     * This method use fns to filter result.
+     * This method push fns to array for further filter result.
      * If there is many input functions is equivalent to OR filter
      * Filter AND is obtained by chaining many where() in query
      * @param  {Array<function>} fns
      * @returns this
      */
     where(...fns) {
-      result = result.filter(record => fns.map(fn => fn(record)).some(el => el));
+      whereFns.push(fns);
       return this;
     },
     /**
-     * This method sorting query result
+     * This function checks if this is duplicated order by invoke, then throw Error.
+     * This method set fn to variable for further sort result.
      * @param {function} fn - function to be use as callback for array sort method
      * @returns this
      */
     orderBy(fn) {
       if (orderByDone) throw new Error('Duplicate ORDERBY');
-      result.sort(fn);
+      orderByFn = fn;
       orderByDone = true;
       return this;
     },
@@ -83,8 +104,9 @@ function query() {
      *
      * @returns this
      */
-    groupBy() {
+    groupBy(fn) {
       if (groupByDone) throw new Error('Duplicate GROUPBY');
+      groupByFn = fn;
       groupByDone = true;
       return this;
     },
@@ -92,16 +114,28 @@ function query() {
      *
      * @returns this
      */
-    having() {
+    having(fn) {
+      havingFns.push(fn);
       return this;
     },
     /**
-     * This method applies function passed in select method if it exist and return result
+     * This method applies all functions passed in previouse functions and return result
      * @returns query result
      */
     execute() {
-      if (selectFn) {
-        return result.map(record => selectFn(record));
+      if (whereFns.length > 0) {
+        for (let i = 0; i < whereFns.length; i++) {
+          result = _where(result, whereFns[i]);
+          // result = result.filter(row => whereFns[i].map(whereFn => whereFn(row)).some(res => res === true));
+        }
+      }
+      // group by
+      // having
+      if (orderByFn != null) {
+        result = _orderBy(result, orderByFn);
+      }
+      if (selectFn != null) {
+        result = _select(result, selectFn);
       }
       return result;
     }
