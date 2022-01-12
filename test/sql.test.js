@@ -321,12 +321,25 @@ describe('GROUP BY tests', () => {
 
 describe('Numbers array tests', () => {
   const numbers = () => [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  test('SELECT * FROM numbers', () => {
+    expect(query().select().from(numbers()).execute()).toEqual(numbers());
+  });
+
   function isEven(number) {
     return number % 2 === 0;
   }
   function parity(number) {
     return isEven(number) ? 'even' : 'odd';
   }
+
+  test('Grouping numbers by parity', () => {
+    expect(query().select().from(numbers()).groupBy(parity).execute()).toEqual([
+      ['odd', [1, 3, 5, 7, 9]],
+      ['even', [2, 4, 6, 8]]
+    ]);
+  });
+
   function isPrime(number) {
     if (number < 2) {
       return false;
@@ -339,29 +352,6 @@ describe('Numbers array tests', () => {
   function prime(number) {
     return isPrime(number) ? 'prime' : 'divisible';
   }
-  function odd(group) {
-    return group[0] === 'odd';
-  }
-  function descendentCompare(number1, number2) {
-    return number2 - number1;
-  }
-  function lessThan3(number) {
-    return number < 3;
-  }
-  function greaterThan4(number) {
-    return number > 4;
-  }
-
-  test('SELECT * FROM numbers', () => {
-    expect(query().select().from(numbers()).execute()).toEqual(numbers());
-  });
-
-  test('Grouping numbers by parity', () => {
-    expect(query().select().from(numbers()).groupBy(parity).execute()).toEqual([
-      ['odd', [1, 3, 5, 7, 9]],
-      ['even', [2, 4, 6, 8]]
-    ]);
-  });
 
   test('Multilevel grouping - SELECT * FROM numbers GROUP BY parity, isPrime', () => {
     expect(query().select().from(numbers()).groupBy(parity, prime).execute()).toEqual([
@@ -382,16 +372,31 @@ describe('Numbers array tests', () => {
     ]);
   });
 
+  function odd(group) {
+    return group[0] === 'odd';
+  }
+
   test('Filter groups with having', () => {
     expect(query().select().from(numbers()).groupBy(parity).having(odd).execute()).toEqual([['odd', [1, 3, 5, 7, 9]]]);
   });
 
-  test('SELECT * FROM number WHERE number < 3 OR number > 4', () => {
-    expect(query().select().from(numbers()).where(lessThan3, greaterThan4).execute()).toEqual([1, 2, 5, 6, 7, 8, 9]);
-  });
-  // jak sortowanie jest wcześniej to późniejsze testy nie przechodzą, bo jakby zapamiętuje jak zostało posortowane :/
+  function descendentCompare(number1, number2) {
+    return number2 - number1;
+  }
+
   test('Descending order numbers', () => {
     expect(query().select().from(numbers()).orderBy(descendentCompare).execute()).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
+  });
+
+  function lessThan3(number) {
+    return number < 3;
+  }
+  function greaterThan4(number) {
+    return number > 4;
+  }
+
+  test('SELECT * FROM number WHERE number < 3 OR number > 4', () => {
+    expect(query().select().from(numbers()).where(lessThan3, greaterThan4).execute()).toEqual([1, 2, 5, 6, 7, 8, 9]);
   });
 });
 
