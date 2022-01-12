@@ -59,7 +59,9 @@ function query() {
     return result;
   }
 
-  function _having(rows, havingFn) {}
+  function _having(rows, havingFn) {
+    return rows.filter(row => havingFn(row));
+  }
 
   function _orderBy(rows, orderByFn) {
     return rows.slice().sort(orderByFn);
@@ -142,16 +144,18 @@ function query() {
       if (whereFns.length > 0) {
         for (let i = 0; i < whereFns.length; i++) {
           result = _where(result, whereFns[i]);
-          // result = result.filter(row => whereFns[i].map(whereFn => whereFn(row)).some(res => res === true));
         }
       }
-      // group by
       if (groupByFns.length > 0) {
         for (let i = 0; i < groupByFns.length; i++) {
           result = _groupBy(result, groupByFns[i]);
         }
       }
-      // having
+      if (havingFns.length > 0) {
+        for (let i = 0; i < havingFns.length; i++) {
+          result = _having(result, havingFns[i]);
+        }
+      }
       if (orderByFn != null) {
         result = _orderBy(result, orderByFn);
       }
