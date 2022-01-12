@@ -41,15 +41,40 @@ function query() {
     return rows.filter(row => whereFns.map(whereFn => whereFn(row)).some(res => res === true));
   }
 
-  function _groupBy(rows, groupByFn) {
+  function _groupBy(rows, groupByFns) {
     return rows.reduce((groups, row) => {
-      const groupName = groupByFn(row);
-      const groupByName = groups.find(group => group[0] === groupName);
-      if (groupByName === undefined) {
-        groups.push([groupName, [row]]);
-      } else {
-        groupByName[1].push(row);
+      const groupNames = groupByFns.map(groupByFn => groupByFn(row)).filter(el => el);
+      const groupCnt = groupNames.length;
+      let group;
+
+      for (let i = 0; i < groupCnt; i++) {
+        const groupName = groupNames[i];
+
+        if (i === 0) {
+          group = groups.find(group => group[0] === groupName);
+          if (group === undefined) {
+            groups.push([groupName, []]);
+            group = groups.find(group => group[0] === groupName);
+          }
+
+          if (i === groupCnt - 1) {
+            group[1].push(row);
+          }
+        } else {
+          const group1 = group[1].find(group => group[0] === groupName);
+
+          if (group1 === undefined) {
+            group[1].push([groupName, []]);
+          }
+
+          group = group[1].find(group => group[0] === groupName);
+
+          if (i === groupCnt - 1) {
+            group[1].push(row);
+          }
+        }
       }
+
       return groups;
     }, []);
   }
@@ -141,15 +166,18 @@ function query() {
           result = _where(result, whereFns[i]);
         }
       }
+      // if (groupByFns.length > 0) {
+      //   for (let i = 0; i < groupByFns.length; i++) {
+      //     if (i === 0) result = _groupBy(result, groupByFns[i], i);
+      //     else {
+      //       for (let j = 0; j < result.length; j++) {
+      //         result[j].push(_groupBy(result[j].pop(), groupByFns[i]));
+      //       }
+      //     }
+      //   }
+      // }
       if (groupByFns.length > 0) {
-        for (let i = 0; i < groupByFns.length; i++) {
-          if (i === 0) result = _groupBy(result, groupByFns[i], i);
-          else {
-            for (let j = 0; j < result.length; j++) {
-              result[j].push(_groupBy(result[j].pop(), groupByFns[i]));
-            }
-          }
-        }
+        result = _groupBy(result, groupByFns);
       }
       if (havingFns.length > 0) {
         for (let i = 0; i < havingFns.length; i++) {
