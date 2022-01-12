@@ -42,21 +42,16 @@ function query() {
   }
 
   function _groupBy(rows, groupByFn) {
-    const groups = rows.reduce((groups, row) => {
-      let group = groupByFn(row);
-      if (groups.hasOwnProperty(group)) {
-        groups[group].push(row);
+    return rows.reduce((groups, row) => {
+      const groupName = groupByFn(row);
+      const groupByName = groups.find(group => group[0] === groupName);
+      if (groupByName === undefined) {
+        groups.push([groupName, [row]]);
       } else {
-        groups[group] = [row];
+        groupByName[1].push(row);
       }
       return groups;
-    }, {});
-
-    const result = [];
-    for (const [key, value] of Object.entries(groups)) {
-      result.push([key, value]);
-    }
-    return result;
+    }, []);
   }
 
   function _having(rows, havingFn) {
