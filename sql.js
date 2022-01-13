@@ -1,4 +1,4 @@
-function query() {
+const query = function () {
   let selectFn = null;
   const whereFns = [];
   let orderByFn = null;
@@ -166,16 +166,6 @@ function query() {
           result = _where(result, whereFns[i]);
         }
       }
-      // if (groupByFns.length > 0) {
-      //   for (let i = 0; i < groupByFns.length; i++) {
-      //     if (i === 0) result = _groupBy(result, groupByFns[i], i);
-      //     else {
-      //       for (let j = 0; j < result.length; j++) {
-      //         result[j].push(_groupBy(result[j].pop(), groupByFns[i]));
-      //       }
-      //     }
-      //   }
-      // }
       if (groupByFns.length > 0) {
         result = _groupBy(result, groupByFns);
       }
@@ -193,6 +183,6 @@ function query() {
       return result;
     }
   };
-}
+};
 
 module.exports = query;
